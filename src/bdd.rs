@@ -139,6 +139,10 @@ impl BDDManager {
     pub fn eq_op(&mut self, x: &BDD, y: &BDD) -> BDD {
         self.apply(&|a, b| a == b, x, y)
     }
+    pub fn not_op(&mut self, x: &BDD) -> BDD {
+        let t = self.true_bdd.clone();
+        self.xor_op(x, &t)
+    }
     fn node_name(node_number: u32) -> String {
         "n".to_string() + &node_number.to_string()
     }
