@@ -154,7 +154,7 @@ impl BDDManager {
             return;
         }
         let node_number = x.node_number();
-        match ret.find(&Self::node_name(node_number)) {
+        match ret.find(&(Self::node_name(node_number) + ")")) {
             Some(_) => return,
             _ => {}
         };
