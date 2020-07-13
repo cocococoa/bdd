@@ -288,6 +288,19 @@ impl BDD {
             _ => None,
         }
     }
+    pub fn count_answer(&self) -> u128 {
+        if self.is_true() {
+            1
+        } else if self.is_false() {
+            0
+        } else {
+            let lo = self.low().unwrap();
+            let lo_diff = lo.var() - self.var() - 1;
+            let hi = self.high().unwrap();
+            let hi_diff = hi.var() - self.var() - 1;
+            (lo.count_answer() << lo_diff) + (hi.count_answer() << hi_diff)
+        }
+    }
 }
 
 impl BDDNode {
