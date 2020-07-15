@@ -170,9 +170,14 @@ impl BDDManager {
             self.dump_tikz_node_impl(x.high().unwrap(), table, ret);
         }
     }
-    fn dump_tikz_edge_impl(&self, x: &BDD, ret: &mut String) {
+    fn dump_tikz_edge_impl(&self, x: &BDD, ret: &mut String, done: &mut HashSet<u32>) {
         if x.is_constant() {
             return;
+        }
+        if done.contains(&x.node_number()) {
+            return;
+        } else {
+            done.insert(x.node_number());
         }
         let node_number = x.node_number();
         if x.low().is_some() {
@@ -185,7 +190,7 @@ impl BDDManager {
                 ret.push_str(&Self::node_name(lo_node_number));
                 ret.push_str(");\n");
             }
-            self.dump_tikz_edge_impl(lo, ret);
+            self.dump_tikz_edge_impl(lo, ret, done);
         }
         if x.high().is_some() {
             let hi = x.high().unwrap();
@@ -197,7 +202,7 @@ impl BDDManager {
                 ret.push_str(&Self::node_name(hi_node_number));
                 ret.push_str(");\n");
             }
-            self.dump_tikz_edge_impl(hi, ret);
+            self.dump_tikz_edge_impl(hi, ret, done);
         }
     }
     pub fn dump_tikz(&self, x: &BDD) -> String {
@@ -231,7 +236,7 @@ impl BDDManager {
         ret.push_str(", xshift=1.5cm] (n0) {$0$};\n");
         ret.push_str("    \\node[draw=black, style=rectangle, right of=n0] (n1) {$1$};\n");
         ret.push_str("\n    % edges\n");
-        self.dump_tikz_edge_impl(x, &mut ret);
+        self.dump_tikz_edge_impl(x, &mut ret, &mut HashSet::new());
         ret.push_str("\\end{tikzpicture}\n");
 
         ret.shrink_to_fit();
