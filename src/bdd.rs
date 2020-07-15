@@ -188,21 +188,25 @@ impl BDDManager {
         if x.low().is_some() {
             let lo = x.low().unwrap();
             let lo_node_number = lo.node_number();
+            if !lo.is_false() {
             ret.push_str("    \\draw[->,dashed] (");
             ret.push_str(&Self::node_name(node_number));
             ret.push_str(") -> (");
             ret.push_str(&Self::node_name(lo_node_number));
             ret.push_str(");\n");
+            }
             self.dump_tikz_edge_impl(lo, ret);
         }
         if x.high().is_some() {
             let hi = x.high().unwrap();
             let hi_node_number = hi.node_number();
+            if !hi.is_false() {
             ret.push_str("    \\draw[->       ] (");
             ret.push_str(&Self::node_name(node_number));
             ret.push_str(") -> (");
             ret.push_str(&Self::node_name(hi_node_number));
             ret.push_str(");\n");
+            }
             self.dump_tikz_edge_impl(hi, ret);
         }
     }
