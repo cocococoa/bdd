@@ -1,5 +1,5 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::collections::LinkedList;
 use std::rc::Rc;
 
@@ -299,11 +299,29 @@ impl BDD {
             0
         } else {
             let lo = self.low().unwrap();
-            let lo_diff = lo.var() - self.var() - 1;
+    }
+    fn node_set_impl(&self, s: &mut HashSet<u32>) {
+        if self.is_constant() {
+            s.insert(self.node_number());
+        } else {
+            s.insert(self.node_number());
+            let lo = self.low().unwrap();
             let hi = self.high().unwrap();
-            let hi_diff = hi.var() - self.var() - 1;
-            (lo.count_answer() << lo_diff) + (hi.count_answer() << hi_diff)
+            lo.node_set_impl(s);
+            hi.node_set_impl(s);
         }
+    }
+    fn node_set(&self) -> HashSet<u32> {
+        // true_node, false_node も含める
+        let mut s = HashSet::new();
+        s.reserve(1024 * 1024);
+        self.node_set_impl(&mut s);
+        s.shrink_to_fit();
+
+        s
+        }
+    pub fn count_nodes(&self) -> u32 {
+        self.node_set().len() as u32
     }
 }
 
