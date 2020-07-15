@@ -238,7 +238,7 @@ impl BDDManager {
         ret.push_str("\n    % terminals\n");
         ret.push_str("    \\node[draw=black, style=rectangle, below of=");
         ret.push_str(&(Self::var_name(self.var_table.len() as u32)));
-        ret.push_str(", xshift=1cm] (n0) {$0$};\n");
+        ret.push_str(", xshift=1.5cm] (n0) {$0$};\n");
         ret.push_str("    \\node[draw=black, style=rectangle, right of=n0] (n1) {$1$};\n");
         ret.push_str("\n    % edges\n");
         self.dump_tikz_edge_impl(x, &mut ret);
@@ -246,6 +246,12 @@ impl BDDManager {
 
         ret.shrink_to_fit();
         ret
+    }
+    pub fn false_bdd(&self) -> BDD {
+        self.false_bdd.clone()
+}
+    pub fn true_bdd(&self) -> BDD {
+        self.true_bdd.clone()
     }
 }
 
