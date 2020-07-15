@@ -31,8 +31,7 @@ pub struct BDDManager {
 
 #[derive(Debug)]
 struct BDDNode {
-    // TODO: TrueNode, FalseNodeのためだけにRefCellにするのはいかがなものか。
-    var: RefCell<u32>,
+    var: u32,
     node_number: u32,
     node_type: BDDNodeType,
 }
@@ -89,15 +88,6 @@ impl BDDManager {
     }
     pub fn var(&mut self, entry: VarTableEntry) -> BDD {
         self.var_table.push(entry);
-        self.true_bdd
-            .head
-            .var
-            .replace(self.var_table.len() as u32 + 1);
-        self.false_bdd
-            .head
-            .var
-            .replace(self.var_table.len() as u32 + 1);
-
         self.mk(
             self.var_table.len() as u32,
             &self.false_bdd.clone(),
@@ -189,11 +179,11 @@ impl BDDManager {
             let lo = x.low().unwrap();
             let lo_node_number = lo.node_number();
             if !lo.is_false() {
-            ret.push_str("    \\draw[->,dashed] (");
-            ret.push_str(&Self::node_name(node_number));
-            ret.push_str(") -> (");
-            ret.push_str(&Self::node_name(lo_node_number));
-            ret.push_str(");\n");
+                ret.push_str("    \\draw[->,dashed] (");
+                ret.push_str(&Self::node_name(node_number));
+                ret.push_str(") -> (");
+                ret.push_str(&Self::node_name(lo_node_number));
+                ret.push_str(");\n");
             }
             self.dump_tikz_edge_impl(lo, ret);
         }
@@ -201,11 +191,11 @@ impl BDDManager {
             let hi = x.high().unwrap();
             let hi_node_number = hi.node_number();
             if !hi.is_false() {
-            ret.push_str("    \\draw[->       ] (");
-            ret.push_str(&Self::node_name(node_number));
-            ret.push_str(") -> (");
-            ret.push_str(&Self::node_name(hi_node_number));
-            ret.push_str(");\n");
+                ret.push_str("    \\draw[->       ] (");
+                ret.push_str(&Self::node_name(node_number));
+                ret.push_str(") -> (");
+                ret.push_str(&Self::node_name(hi_node_number));
+                ret.push_str(");\n");
             }
             self.dump_tikz_edge_impl(hi, ret);
         }
@@ -249,7 +239,7 @@ impl BDDManager {
     }
     pub fn false_bdd(&self) -> BDD {
         self.false_bdd.clone()
-}
+    }
     pub fn true_bdd(&self) -> BDD {
         self.true_bdd.clone()
     }
@@ -262,7 +252,7 @@ impl BDD {
         }
     }
     fn var(&self) -> u32 {
-        self.head.var.borrow().clone()
+        self.head.var
     }
     fn node_number(&self) -> u32 {
         self.head.node_number
@@ -298,13 +288,26 @@ impl BDD {
             _ => None,
         }
     }
-    pub fn count_answer(&self) -> u128 {
+    pub fn count_answers(&self, var_num: u32) -> u128 {
         if self.is_true() {
             1
         } else if self.is_false() {
             0
         } else {
             let lo = self.low().unwrap();
+            let lo_diff = if lo.is_constant() {
+                var_num + 1 - self.var() - 1
+            } else {
+                lo.var() - self.var() - 1
+            };
+            let hi = self.high().unwrap();
+            let hi_diff = if hi.is_constant() {
+                var_num + 1 - self.var() - 1
+            } else {
+                hi.var() - self.var() - 1
+            };
+            (lo.count_answers(var_num) << lo_diff) + (hi.count_answers(var_num) << hi_diff)
+        }
     }
     fn node_set_impl(&self, s: &mut HashSet<u32>) {
         if self.is_constant() {
@@ -325,7 +328,7 @@ impl BDD {
         s.shrink_to_fit();
 
         s
-        }
+    }
     pub fn count_nodes(&self) -> u32 {
         self.node_set().len() as u32
     }
@@ -334,7 +337,7 @@ impl BDD {
 impl BDDNode {
     fn new(var: u32, node_number: u32, lo: &BDD, hi: &BDD) -> Self {
         BDDNode {
-            var: RefCell::new(var),
+            var: var,
             node_number: node_number,
             node_type: BDDNodeType::Node {
                 lo: lo.clone(),
@@ -344,14 +347,14 @@ impl BDDNode {
     }
     fn false_node() -> Self {
         BDDNode {
-            var: RefCell::new(0),
+            var: u32::max_value(),
             node_number: 0,
             node_type: BDDNodeType::FalseNode,
         }
     }
     fn true_node() -> Self {
         BDDNode {
-            var: RefCell::new(1),
+            var: u32::max_value(),
             node_number: 1,
             node_type: BDDNodeType::TrueNode,
         }
