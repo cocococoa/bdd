@@ -15,8 +15,9 @@ fn test_c6() {
         f = mgr.or_op(&f, &x);
     }
     let independence = mgr.not_op(&f);
-    assert_eq!(independence.count_answer(), 18);
-    println!("independent: \n{}", mgr.dump_tikz(&independence));
+    assert_eq!(independence.count_answers(vertex as u32), 18);
+    assert_eq!(independence.count_nodes(), 16);
+    // println!("independent: \n{}", mgr.dump_tikz(&independence));
 
     for i in 0..vertex {
         let mut x = vertices[i].clone();
@@ -32,6 +33,7 @@ fn test_c6() {
     }
     let kernel_impl = f;
     let kernel = mgr.and_op(&independence, &kernel_impl);
-    assert_eq!(kernel.count_answer(), 5);
-    println!("kernel: \n{}", mgr.dump_tikz(&kernel));
+    assert_eq!(kernel.count_answers(vertex as u32), 5);
+    assert_eq!(kernel.count_nodes(), 17);
+    // println!("kernel: \n{}", mgr.dump_tikz(&kernel));
 }
