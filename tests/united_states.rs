@@ -2,24 +2,37 @@ use bdd::bdd::BDDManager;
 use std::collections::HashMap;
 
 pub struct Graph {
-    node_entry: HashMap<String, usize>,
+    node_entry: Vec<String>,
     edge: Vec<Vec<usize>>,
 }
 impl Graph {
     fn new() -> Self {
         Graph {
-            node_entry: HashMap::new(),
+            node_entry: vec![],
             edge: vec![],
         }
     }
     pub fn add_node(&mut self, node_name: &str) {
-        let new_node_number = self.node_entry.len() as usize;
-        self.node_entry
-            .insert(node_name.to_string(), new_node_number);
+        self.node_entry.push(node_name.to_string());
         self.edge.push(vec![]);
     }
+    fn get_id(&self, node: &str) -> Option<usize> {
+        let mut ret = usize::max_value();
+        for i in 0..self.node_entry.len() {
+            if self.node_entry[i] == node {
+                ret = i;
+                break;
+            }
+        }
+
+        if ret == usize::max_value() {
+            None
+        } else {
+            Some(ret)
+        }
+    }
     pub fn add_edge(&mut self, node_a: &str, node_b: &str) -> Result<(), ()> {
-        match (self.node_entry.get(node_a), self.node_entry.get(node_b)) {
+        match (self.get_id(node_a), self.get_id(node_b)) {
             (Some(id_a), Some(id_b)) => {
                 let id_a = id_a.clone();
                 let id_b = id_b.clone();
@@ -30,7 +43,7 @@ impl Graph {
             _ => Err(()),
         }
     }
-    pub fn nodes(&self) -> &HashMap<String, usize> {
+    pub fn nodes(&self) -> &Vec<String> {
         &self.node_entry
     }
     pub fn edges(&self) -> &Vec<Vec<usize>> {
@@ -40,11 +53,12 @@ impl Graph {
 
 pub fn united_states() -> Graph {
     let mut g = Graph::new();
+    // 410, 784
     let nodes = [
-        "CA", "WA", "OR", "NV", "ID", "UT", "AZ", "MT", "WY", "CO", "NM", "ND", "SD", "NE", "KS",
-        "OK", "TX", "MN", "IA", "MO", "AR", "LA", "WI", "IL", "MS", "MI", "IN", "KY", "TN", "AL",
-        "OH", "WV", "VA", "GA", "FL", "PA", "MD", "DC", "NC", "SC", "VT", "NY", "NJ", "DE", "NH",
-        "MA", "CT", "ME", "RI",
+        "ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ", "DE", "PA", "MD", "DC", "OH", "WV", "VA",
+        "NC", "SC", "GA", "FL", "AL", "MI", "IN", "KY", "TN", "MS", "IL", "WI", "MN", "IA", "MO",
+        "AR", "LA", "TX", "OK", "NE", "KS", "SD", "ND", "WY", "MT", "CO", "NM", "AZ", "ID", "UT",
+        "NV", "CA", "WA", "OR",
     ];
     assert_eq!(nodes.len(), 49);
     let edges = [
@@ -178,7 +192,7 @@ fn test_us() {
 
     // 変数の発行
     let mut vertices = HashMap::new();
-    for (n, id) in us.nodes().iter() {
+    for (id, n) in us.nodes().iter().enumerate() {
         let v = mgr.var(n.to_string());
         vertices.insert(id, v);
     }
