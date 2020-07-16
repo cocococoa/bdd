@@ -59,8 +59,8 @@ impl BDDManager {
         BDDManager {
             var_table: vec![],
             node_list: node_list,
-            true_bdd: BDD::new(&t),
-            false_bdd: BDD::new(&f),
+            true_bdd: BDD::new(t.clone()),
+            false_bdd: BDD::new(f.clone()),
             reverse_map: HashMap::new(),
         }
     }
@@ -74,14 +74,14 @@ impl BDDManager {
         } else {
             let key = ReverseKey::new(var, lo, hi);
             match self.reverse_map.get(&key) {
-                Some(bdd_node) => BDD::new(bdd_node),
+                Some(bdd_node) => BDD::new(bdd_node.clone()),
                 None => {
                     let new_node_number = self.node_list.len() as u32;
-                    self.node_list
-                        .push_back(Rc::new(BDDNode::new(var, new_node_number, &lo, &hi)));
-                    self.reverse_map
-                        .insert(key, Rc::clone(self.node_list.back().unwrap()));
-                    BDD::new(self.node_list.back().unwrap())
+                    let new_node =
+                        Rc::new(BDDNode::new(var, new_node_number, lo.clone(), hi.clone()));
+                    self.node_list.push_back(new_node.clone());
+                    self.reverse_map.insert(key, Rc::clone(&new_node));
+                    BDD::new(new_node)
                 }
             }
         }
@@ -170,9 +170,14 @@ impl BDDManager {
             self.dump_tikz_node_impl(x.high().unwrap(), table, ret);
         }
     }
-    fn dump_tikz_edge_impl(&self, x: &BDD, ret: &mut String) {
+    fn dump_tikz_edge_impl(&self, x: &BDD, ret: &mut String, done: &mut HashSet<u32>) {
         if x.is_constant() {
             return;
+        }
+        if done.contains(&x.node_number()) {
+            return;
+        } else {
+            done.insert(x.node_number());
         }
         let node_number = x.node_number();
         if x.low().is_some() {
@@ -185,7 +190,7 @@ impl BDDManager {
                 ret.push_str(&Self::node_name(lo_node_number));
                 ret.push_str(");\n");
             }
-            self.dump_tikz_edge_impl(lo, ret);
+            self.dump_tikz_edge_impl(lo, ret, done);
         }
         if x.high().is_some() {
             let hi = x.high().unwrap();
@@ -197,7 +202,7 @@ impl BDDManager {
                 ret.push_str(&Self::node_name(hi_node_number));
                 ret.push_str(");\n");
             }
-            self.dump_tikz_edge_impl(hi, ret);
+            self.dump_tikz_edge_impl(hi, ret, done);
         }
     }
     pub fn dump_tikz(&self, x: &BDD) -> String {
@@ -231,7 +236,7 @@ impl BDDManager {
         ret.push_str(", xshift=1.5cm] (n0) {$0$};\n");
         ret.push_str("    \\node[draw=black, style=rectangle, right of=n0] (n1) {$1$};\n");
         ret.push_str("\n    % edges\n");
-        self.dump_tikz_edge_impl(x, &mut ret);
+        self.dump_tikz_edge_impl(x, &mut ret, &mut HashSet::new());
         ret.push_str("\\end{tikzpicture}\n");
 
         ret.shrink_to_fit();
@@ -246,10 +251,8 @@ impl BDDManager {
 }
 
 impl BDD {
-    fn new(bddnode: &Rc<BDDNode>) -> Self {
-        BDD {
-            head: Rc::clone(bddnode),
-        }
+    fn new(bddnode: Rc<BDDNode>) -> Self {
+        BDD { head: bddnode }
     }
     fn var(&self) -> u32 {
         self.head.var
@@ -288,7 +291,7 @@ impl BDD {
             _ => None,
         }
     }
-    pub fn count_answers(&self, var_num: u32) -> u128 {
+    pub fn count_answers(&self, var_num: u32) -> u32 {
         if self.is_true() {
             1
         } else if self.is_false() {
@@ -335,14 +338,11 @@ impl BDD {
 }
 
 impl BDDNode {
-    fn new(var: u32, node_number: u32, lo: &BDD, hi: &BDD) -> Self {
+    fn new(var: u32, node_number: u32, lo: BDD, hi: BDD) -> Self {
         BDDNode {
             var: var,
             node_number: node_number,
-            node_type: BDDNodeType::Node {
-                lo: lo.clone(),
-                hi: hi.clone(),
-            },
+            node_type: BDDNodeType::Node { lo: lo, hi: hi },
         }
     }
     fn false_node() -> Self {

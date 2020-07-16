@@ -8,3 +8,5 @@ Binary Decision Diagram (BDD)
 
 -   `tests/circular.rs`
     -   循環グラフ(C6)の独立集合の数とカーネルの数をBDDを使って数え上げる
+-   `tests/united_states.rs`
+    -   アメリカ合衆国の独立集合の数とカーネルの数をBDDを使って数え上げる
